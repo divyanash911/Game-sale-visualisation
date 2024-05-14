@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sector Pie Chart</title>
+    <!-- <link rel="stylesheet" href="styles.css" /> -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Tooltip styling */
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 6px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none; /* Let mouse events pass through, so it doesn't interfere with chart interaction */
+        opacity: 0; /* Start hidden */
+        transition: opacity 0.3s;
+      }
+      svg{
+        margin-left: 20%;
+        
+        /* margin-right: %; */
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <h1 style="text-align: center;"><b>Genres with their frequency and average playtime</b></h1>
+    <br>
+    <br>
+    <svg></svg>
+    
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+      // Load and preprocess data
+      d3.csv("../Data/clean_steam.csv").then(function (data) {
+        // Flatten the data so each genre is treated individually
+        let flattenedData = flattenGenres(data);
+
+        // Process your data to calculate frequency and median playtime for each genre
+        let processedData = processData(flattenedData);
+
+        // Rest of the pie chart code as before...
+        let pie = d3.pie().value(function (d) {
+          return d.frequency;
+        })(processedData);
+
+        let arc = d3
+          .arc()
+          .innerRadius(0)
+          .outerRadius(function (d) {
+            return scaleRadius(d.data.meanPlaytime);
+          });
+
+        let scaleRadius = d3
+          .scaleLinear()
+          .domain([0, d3.max(processedData, (d) => d.meanPlaytime)])
+          .range([200, 500]);
+
+        let svg = d3
+          .select("svg")
+          
+          .attr("width", 1500)
+          .attr("height", 900)
+          .append("g")
+          .attr("transform", "translate(750,500)");
+
+        let totalFrequency = d3.sum(processedData, (d) => d.frequency);
+        let tooltip = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);
+
+        let customColors = [
+          "#1f77b4",
+          "#aec7e8",
+          "#ff7f0e",
+          "#ffbb78",
+          "#2ca02c",
+          "#98df8a",
+          "#d62728",
+          "#ff9896",
+          "#9467bd",
+          "#c5b0d5",
+          "#8c564b",
+          "#c49c94",
+          "#e377c2",
+          "#f7b6d2",
+          "#7f7f7f",
+          "#c7c7c7",
+          "#bcbd22",
+          "#dbdb8d",
+          "#17becf",
+          "#9edae5",
+        ];
+
+        let colorScale = d3.scaleOrdinal(customColors);
+        svg
+          .selectAll("path")
+          .data(pie)
+          .enter()
+          .append("path")
+          .attr("d", arc)
+          .attr("fill", function (d, i) {
+            return colorScale(i);
+          })
+
+          .on("mouseover", function (e, d) {
+            let percentage = (
+              (d.data.frequency / totalFrequency) *
+              100
+            ).toFixed(2);
+            tooltip
+              .transition()
+              .duration(200) // Smooth transition to visible
+              .style("opacity", 0.9); // Make tooltip visible
+
+            tooltip
+              .html(
+                `${d.data.genre}: ${d.data.meanPlaytime} hrs (${percentage}%)`
+              )
+              .style("left", e.pageX + "px") // Position tooltip
+              .style("top", e.pageY - 28 + "px");
+          })
+          .on("mousemove", function (e) {
+            // Optional: Update position on move, if desired
+            tooltip
+              .style("left", e.pageX + "px")
+              .style("top", e.pageY - 28 + "px");
+          })
+          .on("mouseout", function (d) {
+            tooltip.transition().duration(500).style("opacity", 0); // Hide tooltip on mouse out
+          });
+
+        let legend = svg
+          .append("g")
+          .attr("class", "legend")
+          .selectAll("g")
+          .data(processedData)
+          .enter()
+          .append("g")
+          .attr("transform", function (d, i) {
+            return `translate(300, ${i * 20 - 390})`;
+          });
+
+        legend
+          .append("rect")
+          .attr("width", 18)
+          .attr("height", 18)
+          .attr("fill", function (d, i) {
+            return d3.schemeCategory10[i % 10];
+          });
+
+        legend
+          .append("text")
+          .attr("x", 18)
+          .attr("y", 9)
+          .attr("dy", ".3em")
+          .text(function (d) {
+            return d.genre;
+          });
+      });
+
+      // Flatten genres into individual records
+      function flattenGenres(data) {
+        let flattened = [];
+        data.forEach((d) => {
+          let genres = d.genres.split(";");
+          genres.forEach((genre) => {
+            flattened.push({
+              genres: genre.trim(),
+              average_playtime: +d.average_playtime,
+            });
+          });
+        });
+        return flattened;
+      }
+
+      // Process flattened data to calculate frequency and median playtime
+      function processData(data) {
+        let genres = d3.group(data, (d) => d.genres);
+        let processedData = [];
+
+        genres.forEach((value, key) => {
+          let meanPlaytime = d3.mean(value, (d) => d.average_playtime);
+          processedData.push({
+            genre: key,
+            meanPlaytime: meanPlaytime,
+            frequency: value.length,
+          });
+        });
+
+        return processedData;
+      }
+    </script>
+  </body>
+</html>

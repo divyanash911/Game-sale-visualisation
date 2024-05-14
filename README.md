@@ -1,2 +1,5 @@
-# Game-sale-visualisation
-Visualisation of e-game sale analysis with various factors such as playerbase, popularity , genre , market share
+# Visulization of Game dataset
+Live at
+
+https://harsh-gupta10.github.io/Visulization_of_Game_dataset/```
+```

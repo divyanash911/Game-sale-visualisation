@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Critics VS User Score</title>
+  <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
+  <!-- Include Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+      
+  <h1 style="text-align: center;"><b>Critics Score VS User Score</b></h1>
+  <div id="scatter-plot" style="margin-left:20px;margin-right: 20px;"></div>
+
+  <script>
+    // Load data from CSV
+    Plotly.d3.csv('../Data/critics2.csv', function(err, data) {
+      if (err) throw err;
+
+      // Extracting data for plotting
+      var xData = data.map(row => parseFloat(row.Normalized_User_Score));
+      var yData = data.map(row => parseFloat(row.Normalized_Critic_Score));
+      var textData = data.map(row => row.Name);
+
+      // Create trace for scatter plot
+      var trace = {
+        x: xData,
+        y: yData,
+        mode: 'markers',
+        type: 'scatter',
+        text: textData,
+        marker: {
+          size: 6,
+          opacity: 0.8
+        }
+      };
+
+      // Define layout
+      var layout = {
+        xaxis: {
+          title: 'User Score',
+          tickformat: '.4f' // Display up to 2 decimal places
+        },
+        yaxis: {
+          title: 'Critic Score',
+          tickformat: '.4f' // Display up to 2 decimal places
+        }
+      };
+
+      // Plot the graph
+      Plotly.newPlot('scatter-plot', [trace], layout);
+    });
+  </script>
+  
+</body>
+</html>
